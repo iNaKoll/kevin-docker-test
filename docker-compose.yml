@@ -1,0 +1,49 @@
+version: '3.1'
+services:
+    kevin:
+        build: ./kevin
+        ports:
+            - "7777:7777"
+        volumes:
+            - ./kevin/kevin.conf:/etc/kevin/kevin.conf:ro
+            - ./kevin/project.conf:/etc/kevin/projects/project.conf:ro
+            - ./falk/sock:/var/run/kevin/falk/sock
+            - ./kevin/www:/srv/www
+        container_name: kevin
+        depends_on: [falk]
+        stop_signal: SIGINT
+        restart: always
+        secrets:
+              - kevin_ssh_private_key
+
+    falk:
+        build: ./falk
+        volumes:
+            - ./falk/falk.conf:/etc/kevin/falk.conf:ro
+            - ./falk/sock:/var/run/kevin/sock
+            - ./falk/testcontainer:/etc/kevin/Dockerfile:ro
+            - /var/run/docker.sock:/var/run/docker.sock
+        container_name: falk
+        stop_signal: SIGINT
+        restart: always
+        privileged: true
+
+    github_simulator:
+        build: ./github_simulator
+        ports:
+            - "8423:8423"
+            - "80:80"
+        volumes:
+            - ./kevin/kevin.conf:/etc/kevin/kevin.conf:ro
+            - ./kevin/project.conf:/etc/kevin/projects/project.conf:ro
+            - ./kevin/www:/srv/www
+        command: --local-repo --local-repo-address github_simulator --listen 0.0.0.0 /my-super-project/.git my-super-project /etc/kevin/kevin.conf github  --statusurl http://github_simulator:8423
+        container_name: github_simulator
+        depends_on: [kevin]
+        stop_signal: SIGINT
+        restart: on-failure
+        privileged: true
+
+secrets:
+  kevin_ssh_private_key:
+    file: /home/inakoll/.ssh/id_rsa

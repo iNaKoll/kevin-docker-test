@@ -1,0 +1,9 @@
+FROM kevin_base
+ARG ssh_user=chantal
+ARG ssh_key
+
+RUN useradd ${ssh_user} -m
+RUN mkdir -p /home/${ssh_user}/.ssh
+RUN echo ${ssh_key} >> /home/${ssh_user}/.ssh/authorized_keys
+RUN chmod 600 /home/${ssh_user}/.ssh/authorized_keys
+RUN chown ${ssh_user}:${ssh_user} /home/${ssh_user}/.ssh/authorized_keys
